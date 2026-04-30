@@ -1,31 +1,47 @@
-import { StyleSheet } from 'react-native';
+import { ScrollView, View, Text } from 'react-native';
+import { useAppStore } from '../../src/store/appStore';
+import { StatCard } from '../../src/components/ui/StatCard';
+import { SectionHeader } from '../../src/components/ui/SectionHeader';
+import { FilterBar } from '../../src/components/filters/FilterBar';
+import { WorkoutFrequencyChart } from '../../src/components/charts/WorkoutFrequencyChart';
+import { ActivityTypeBreakdown } from '../../src/components/charts/ActivityTypeBreakdown';
+import { useFilteredActivities } from '../../src/hooks/useFilteredData';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+function OverviewStats() {
+  const { data } = useAppStore();
+  const activities = useFilteredActivities();
 
-export default function TabOneScreen() {
+  if (!data) return null;
+
+  const totalCalories = activities.reduce((s, a) => s + (a.calories ?? 0), 0);
+  const latestWeight = [...data.biometrics].filter((b) => b.metric === 'Weight').pop();
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+    <View className="flex-row mb-4">
+      <StatCard label="Sessions" value={activities.length} color="#3b82f6" />
+      <StatCard label="Calories" value={Math.round(totalCalories).toLocaleString()} unit="kcal" color="#10b981" />
+      {latestWeight && (
+        <StatCard label="Weight" value={latestWeight.value.toFixed(1)} unit="kg" color="#f59e0b" />
+      )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-});
+export default function OverviewScreen() {
+  return (
+    <ScrollView className="flex-1 bg-gray-900" contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+      <FilterBar showTypes showGranularity />
+      <OverviewStats />
+
+      <View className="bg-gray-800 rounded-2xl p-4 mb-4">
+        <SectionHeader title="Workout Frequency" subtitle="Sessions per period" />
+        <WorkoutFrequencyChart />
+      </View>
+
+      <View className="bg-gray-800 rounded-2xl p-4 mb-4">
+        <SectionHeader title="Activity Breakdown" subtitle="Calories burned by type" />
+        <ActivityTypeBreakdown />
+      </View>
+    </ScrollView>
+  );
+}
