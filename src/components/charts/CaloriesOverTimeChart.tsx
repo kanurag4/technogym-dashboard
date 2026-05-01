@@ -38,8 +38,8 @@ export function CaloriesOverTimeChart() {
         xAxisThickness={1}
         xAxisColor="#374151"
         noOfSections={4}
-        yAxisTextStyle={{ color: '#6b7280', fontSize: 11 }}
-        xAxisLabelTextStyle={{ color: '#6b7280', fontSize: 11, fontWeight: '600' }}
+        yAxisTextStyle={{ color: '#9ca3af', fontSize: 11 }}
+        xAxisLabelTextStyle={{ color: '#d1d5db', fontSize: 11, fontWeight: '600' }}
         spacing={spacing}
         hideRules
         isAnimated

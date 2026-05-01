@@ -166,6 +166,39 @@ export function useTotalWeightLifted(): GroupedBar[] {
   }, [data, filters.granularity, filters.dateFrom, filters.dateTo]);
 }
 
+export function useCardioDistance(): GroupedBar[] {
+  const { data, filters } = useAppStore();
+
+  return useMemo(() => {
+    if (!data) return [];
+    const cardioActivities = data.activities.filter(
+      (a) =>
+        (a.type === 'cardio' || a.type === 'outdoor') &&
+        inDateRange(a.date, filters.dateFrom, filters.dateTo)
+    );
+    const grouped = groupBy(cardioActivities, (a) => {
+      const bucket = filters.granularity === 'weekly' ? startOfWeek(a.date) : startOfMonth(a.date);
+      return formatDate(bucket);
+    });
+    return Object.entries(grouped)
+      .map(([key, items]) => {
+        const totalKm = items.reduce(
+          (s, a) => s + (a.distanceM ?? a.metrics['HDistance'] ?? 0),
+          0
+        ) / 1000;
+        const d = new Date(key);
+        return {
+          label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d),
+          value: parseFloat(totalKm.toFixed(1)),
+          date: d,
+        };
+      })
+      .filter((d) => d.value > 0)
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .slice(-26);
+  }, [data, filters.granularity, filters.dateFrom, filters.dateTo]);
+}
+
 export function useRowingPerformance(): Array<{
   label: string;
   date: Date;

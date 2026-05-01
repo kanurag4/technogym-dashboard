@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '../../src/store/appStore';
 import { FileUploadScreen } from '../../src/components/upload/FileUploadScreen';
 
@@ -10,6 +11,8 @@ function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
 }
 
 function TabsLayout() {
+  const clearData = useAppStore((s) => s.clearData);
+
   return (
     <Tabs
       screenOptions={{
@@ -25,6 +28,11 @@ function TabsLayout() {
         headerStyle: { backgroundColor: '#111827' },
         headerTitleStyle: { fontWeight: '700', color: '#f9fafb' },
         headerShadowVisible: false,
+        headerRight: () => (
+          <TouchableOpacity onPress={clearData} style={{ marginRight: 16, padding: 4 }}>
+            <Text style={{ fontSize: 20, color: '#6b7280' }}>↺</Text>
+          </TouchableOpacity>
+        ),
       }}
     >
       <Tabs.Screen
@@ -60,7 +68,16 @@ function TabsLayout() {
 }
 
 export default function Layout() {
-  const status = useAppStore((s) => s.status);
+  const { status, initFromStorage } = useAppStore();
+  const [initializing, setInitializing] = useState(true);
+
+  useEffect(() => {
+    initFromStorage().finally(() => setInitializing(false));
+  }, []);
+
+  if (initializing) {
+    return <View style={{ flex: 1, backgroundColor: '#111827' }} />;
+  }
   if (status !== 'ready') {
     return <FileUploadScreen />;
   }

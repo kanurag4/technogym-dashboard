@@ -3,6 +3,7 @@ import { SectionHeader } from '../../src/components/ui/SectionHeader';
 import { FilterBar } from '../../src/components/filters/FilterBar';
 import { CaloriesOverTimeChart } from '../../src/components/charts/CaloriesOverTimeChart';
 import { TotalWeightLiftedChart } from '../../src/components/charts/TotalWeightLiftedChart';
+import { CardioDistanceChart } from '../../src/components/charts/CardioDistanceChart';
 
 export default function WorkoutsScreen() {
   return (
@@ -17,6 +18,11 @@ export default function WorkoutsScreen() {
       <View className="bg-gray-800 rounded-2xl p-4 mb-4">
         <SectionHeader title="Weight Lifted" subtitle="Total kg across strength sessions" />
         <TotalWeightLiftedChart />
+      </View>
+
+      <View className="bg-gray-800 rounded-2xl p-4 mb-4">
+        <SectionHeader title="Cardio Distance" subtitle="km covered in cardio & outdoor sessions" />
+        <CardioDistanceChart />
       </View>
     </ScrollView>
   );

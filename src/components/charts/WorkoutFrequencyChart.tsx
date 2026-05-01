@@ -25,7 +25,7 @@ export function WorkoutFrequencyChart() {
     frontColor: '#3b82f6',
     topLabelComponent: () =>
       d.value > 0 ? (
-        <Text style={{ fontSize: 9, color: '#6b7280', marginBottom: 2 }}>{d.value}</Text>
+        <Text style={{ fontSize: 12, fontWeight: '600', color: '#e5e7eb', marginBottom: 3 }}>{d.value}</Text>
       ) : null,
   }));
 
@@ -42,8 +42,8 @@ export function WorkoutFrequencyChart() {
         xAxisThickness={1}
         xAxisColor="#374151"
         noOfSections={4}
-        yAxisTextStyle={{ color: '#6b7280', fontSize: 10 }}
-        xAxisLabelTextStyle={{ color: '#6b7280', fontSize: 9 }}
+        yAxisTextStyle={{ color: '#9ca3af', fontSize: 11 }}
+        xAxisLabelTextStyle={{ color: '#d1d5db', fontSize: 11, fontWeight: '600' }}
         hideRules
         isAnimated
         spacing={spacing}
