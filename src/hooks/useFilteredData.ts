@@ -59,7 +59,8 @@ export function useWorkoutFrequency(): GroupedBar[] {
   const { filters } = useAppStore();
 
   return useMemo(() => {
-    const grouped = groupBy(activities, (a) => {
+    const indoorOnly = activities.filter((a) => a.sourceType === 'indoor');
+    const grouped = groupBy(indoorOnly, (a) => {
       const bucket =
         filters.granularity === 'weekly' ? startOfWeek(a.date) : startOfMonth(a.date);
       return formatDate(bucket);
@@ -71,7 +72,7 @@ export function useWorkoutFrequency(): GroupedBar[] {
           filters.granularity === 'weekly'
             ? formatWeek(new Date(key))
             : formatMonthYear(new Date(key)),
-        value: items.length,
+        value: new Set(items.map((a) => formatDate(a.date))).size,
         date: new Date(key),
       }))
       .sort((a, b) => a.date.getTime() - b.date.getTime())
@@ -79,7 +80,7 @@ export function useWorkoutFrequency(): GroupedBar[] {
   }, [activities, filters.granularity]);
 }
 
-export function useCaloriesOverTime(): StackedBar[] {
+export function useCaloriesOverTime(mode: 'total' | 'avg' = 'total'): StackedBar[] {
   const activities = useFilteredActivities();
   const { filters } = useAppStore();
 
@@ -92,26 +93,27 @@ export function useCaloriesOverTime(): StackedBar[] {
 
     return Object.entries(grouped)
       .map(([key, items]) => {
-        const indoor = items
-          .filter((a) => a.sourceType === 'indoor')
-          .reduce((s, a) => s + (a.calories ?? 0), 0);
-        const outdoor = items
-          .filter((a) => a.sourceType === 'outdoor')
-          .reduce((s, a) => s + (a.calories ?? 0), 0);
+        const indoorItems = items.filter((a) => a.sourceType === 'indoor');
+        const outdoorItems = items.filter((a) => a.sourceType === 'outdoor');
+        const indoorTotal = indoorItems.reduce((s, a) => s + (a.calories ?? 0), 0);
+        const outdoorTotal = outdoorItems.reduce((s, a) => s + (a.calories ?? 0), 0);
+        const indoor = mode === 'avg' && indoorItems.length > 0
+          ? Math.round(indoorTotal / indoorItems.length)
+          : Math.round(indoorTotal);
+        const outdoor = mode === 'avg' && outdoorItems.length > 0
+          ? Math.round(outdoorTotal / outdoorItems.length)
+          : Math.round(outdoorTotal);
         const d = new Date(key);
         return {
-          label:
-            filters.granularity === 'weekly'
-              ? formatWeek(d)
-              : formatMonthYear(d),
-          indoor: Math.round(indoor),
-          outdoor: Math.round(outdoor),
+          label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d),
+          indoor,
+          outdoor,
           date: d,
         };
       })
       .sort((a, b) => a.date.getTime() - b.date.getTime())
       .slice(-26);
-  }, [activities, filters.granularity]);
+  }, [activities, filters.granularity, mode]);
 }
 
 export function useActivityTypeBreakdown(): Array<{ type: string; calories: number; color: string }> {
@@ -136,7 +138,7 @@ export function useActivityTypeBreakdown(): Array<{ type: string; calories: numb
   }, [activities]);
 }
 
-export function useTotalWeightLifted(): GroupedBar[] {
+export function useTotalWeightLifted(mode: 'total' | 'avg' = 'total'): GroupedBar[] {
   const { data, filters } = useAppStore();
 
   return useMemo(() => {
@@ -154,19 +156,20 @@ export function useTotalWeightLifted(): GroupedBar[] {
     return Object.entries(grouped)
       .map(([key, items]) => {
         const total = items.reduce((s, a) => s + (a.metrics['TotalIsoWeight'] ?? 0), 0);
+        const value = mode === 'avg' ? Math.round(total / items.length) : Math.round(total);
         const d = new Date(key);
         return {
           label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d),
-          value: Math.round(total),
+          value,
           date: d,
         };
       })
       .sort((a, b) => a.date.getTime() - b.date.getTime())
       .slice(-26);
-  }, [data, filters.granularity, filters.dateFrom, filters.dateTo]);
+  }, [data, filters.granularity, filters.dateFrom, filters.dateTo, mode]);
 }
 
-export function useCardioDistance(): GroupedBar[] {
+export function useCardioDistance(mode: 'total' | 'avg' = 'total'): GroupedBar[] {
   const { data, filters } = useAppStore();
 
   return useMemo(() => {
@@ -182,16 +185,40 @@ export function useCardioDistance(): GroupedBar[] {
     });
     return Object.entries(grouped)
       .map(([key, items]) => {
-        const totalKm = items.reduce(
-          (s, a) => s + (a.distanceM ?? a.metrics['HDistance'] ?? 0),
-          0
-        ) / 1000;
+        const totalM = items.reduce((s, a) => s + (a.distanceM ?? a.metrics['HDistance'] ?? 0), 0);
+        const km = mode === 'avg' ? totalM / items.length / 1000 : totalM / 1000;
         const d = new Date(key);
         return {
           label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d),
-          value: parseFloat(totalKm.toFixed(1)),
+          value: parseFloat(km.toFixed(1)),
           date: d,
         };
+      })
+      .filter((d) => d.value > 0)
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .slice(-26);
+  }, [data, filters.granularity, filters.dateFrom, filters.dateTo, mode]);
+}
+
+export function useCardioPace(): GroupedBar[] {
+  const { data, filters } = useAppStore();
+  return useMemo(() => {
+    if (!data) return [];
+    const activities = data.activities.filter(
+      (a) =>
+        (a.type === 'cardio' || a.type === 'outdoor') &&
+        (a.metrics['AvgPace'] ?? 0) > 0 &&
+        inDateRange(a.date, filters.dateFrom, filters.dateTo)
+    );
+    const grouped = groupBy(activities, (a) => {
+      const bucket = filters.granularity === 'weekly' ? startOfWeek(a.date) : startOfMonth(a.date);
+      return formatDate(bucket);
+    });
+    return Object.entries(grouped)
+      .map(([key, items]) => {
+        const avg = items.reduce((s, a) => s + (a.metrics['AvgPace'] ?? 0), 0) / items.length;
+        const d = new Date(key);
+        return { label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d), value: Math.round(avg), date: d };
       })
       .filter((d) => d.value > 0)
       .sort((a, b) => a.date.getTime() - b.date.getTime())
@@ -199,10 +226,121 @@ export function useCardioDistance(): GroupedBar[] {
   }, [data, filters.granularity, filters.dateFrom, filters.dateTo]);
 }
 
+export function useCardioElevation(): GroupedBar[] {
+  const { data, filters } = useAppStore();
+  return useMemo(() => {
+    if (!data) return [];
+    const activities = data.activities.filter(
+      (a) =>
+        (a.type === 'cardio' || a.type === 'outdoor') &&
+        (a.metrics['Elevation'] ?? 0) > 0 &&
+        inDateRange(a.date, filters.dateFrom, filters.dateTo)
+    );
+    const grouped = groupBy(activities, (a) => {
+      const bucket = filters.granularity === 'weekly' ? startOfWeek(a.date) : startOfMonth(a.date);
+      return formatDate(bucket);
+    });
+    return Object.entries(grouped)
+      .map(([key, items]) => {
+        const total = items.reduce((s, a) => s + (a.metrics['Elevation'] ?? 0), 0);
+        const d = new Date(key);
+        return { label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d), value: Math.round(total), date: d };
+      })
+      .filter((d) => d.value > 0)
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .slice(-26);
+  }, [data, filters.granularity, filters.dateFrom, filters.dateTo]);
+}
+
+export function useCardioCalories(mode: 'total' | 'avg' = 'total'): GroupedBar[] {
+  const { data, filters } = useAppStore();
+  return useMemo(() => {
+    if (!data) return [];
+    const activities = data.activities.filter(
+      (a) =>
+        (a.type === 'cardio' || a.type === 'outdoor') &&
+        inDateRange(a.date, filters.dateFrom, filters.dateTo)
+    );
+    const grouped = groupBy(activities, (a) => {
+      const bucket = filters.granularity === 'weekly' ? startOfWeek(a.date) : startOfMonth(a.date);
+      return formatDate(bucket);
+    });
+    return Object.entries(grouped)
+      .map(([key, items]) => {
+        const total = items.reduce((s, a) => s + (a.calories ?? 0), 0);
+        const value = mode === 'avg' ? Math.round(total / items.length) : Math.round(total);
+        const d = new Date(key);
+        return { label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d), value, date: d };
+      })
+      .filter((d) => d.value > 0)
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .slice(-26);
+  }, [data, filters.granularity, filters.dateFrom, filters.dateTo, mode]);
+}
+
+export function useTrainingLoad(): GroupedBar[] {
+  const activities = useFilteredActivities();
+  const { filters } = useAppStore();
+  return useMemo(() => {
+    const grouped = groupBy(activities, (a) => {
+      const bucket = filters.granularity === 'weekly' ? startOfWeek(a.date) : startOfMonth(a.date);
+      return formatDate(bucket);
+    });
+    return Object.entries(grouped)
+      .map(([key, items]) => {
+        const totalMin = items.reduce((s, a) => s + (a.durationSec ?? 0), 0) / 60;
+        const d = new Date(key);
+        return { label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d), value: Math.round(totalMin), date: d };
+      })
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .slice(-26);
+  }, [activities, filters.granularity]);
+}
+
+export function useWorkoutDays(): GroupedBar[] {
+  const activities = useFilteredActivities();
+  const { filters } = useAppStore();
+  return useMemo(() => {
+    const grouped = groupBy(activities, (a) => {
+      const bucket = filters.granularity === 'weekly' ? startOfWeek(a.date) : startOfMonth(a.date);
+      return formatDate(bucket);
+    });
+    return Object.entries(grouped)
+      .map(([key, items]) => {
+        const uniqueDays = new Set(items.map((a) => formatDate(a.date))).size;
+        const d = new Date(key);
+        return { label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d), value: uniqueDays, date: d };
+      })
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .slice(-26);
+  }, [activities, filters.granularity]);
+}
+
+export function useMetsMinTrend(): GroupedBar[] {
+  const activities = useFilteredActivities();
+  const { filters } = useAppStore();
+  return useMemo(() => {
+    const withMets = activities.filter((a) => (a.metrics['MetsMin'] ?? 0) > 0);
+    const grouped = groupBy(withMets, (a) => {
+      const bucket = filters.granularity === 'weekly' ? startOfWeek(a.date) : startOfMonth(a.date);
+      return formatDate(bucket);
+    });
+    return Object.entries(grouped)
+      .map(([key, items]) => {
+        const total = items.reduce((s, a) => s + (a.metrics['MetsMin'] ?? 0), 0);
+        const d = new Date(key);
+        return { label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d), value: parseFloat(total.toFixed(1)), date: d };
+      })
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .slice(-26);
+  }, [activities, filters.granularity]);
+}
+
 export function useRowingPerformance(): Array<{
   label: string;
   date: Date;
   avgDistanceM: number;
+  totalDistanceM: number;
   avgPower: number;
   avgSpm: number;
   sessions: number;
@@ -225,13 +363,14 @@ export function useRowingPerformance(): Array<{
     return Object.entries(grouped)
       .map(([key, items]) => {
         const d = new Date(key);
-        const avgDist = items.reduce((s, a) => s + (a.distanceM ?? a.metrics['RowingDistance'] ?? 0), 0) / items.length;
+        const totalDist = items.reduce((s, a) => s + (a.distanceM ?? a.metrics['RowingDistance'] ?? 0), 0);
         const avgPow = items.reduce((s, a) => s + (a.metrics['AvgPower'] ?? 0), 0) / items.length;
         const avgSpm = items.reduce((s, a) => s + (a.metrics['AvgSpm'] ?? 0), 0) / items.length;
         return {
           label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d),
           date: d,
-          avgDistanceM: Math.round(avgDist),
+          avgDistanceM: Math.round(totalDist / items.length),
+          totalDistanceM: Math.round(totalDist),
           avgPower: Math.round(avgPow),
           avgSpm: Math.round(avgSpm * 10) / 10,
           sessions: items.length,

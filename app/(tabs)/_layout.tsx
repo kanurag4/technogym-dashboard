@@ -59,6 +59,13 @@ function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="cardio"
+        options={{
+          title: 'Cardio',
+          tabBarIcon: ({ focused }) => <TabIcon emoji="🏃" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
         name="strength"
         options={{
           title: 'Strength',

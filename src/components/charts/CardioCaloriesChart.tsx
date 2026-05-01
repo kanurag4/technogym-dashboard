@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
-import { useTotalWeightLifted } from '../../hooks/useFilteredData';
+import { useCardioCalories } from '../../hooks/useFilteredData';
 import { barDims } from '../../lib/utils';
 
-export function TotalWeightLiftedChart() {
+export function CardioCaloriesChart() {
   const [mode, setMode] = useState<'total' | 'avg'>('total');
-  const data = useTotalWeightLifted(mode);
+  const data = useCardioCalories(mode);
   const { width } = useWindowDimensions();
   const WIDTH = width - 64;
 
   if (data.length === 0) {
     return (
       <View className="h-40 items-center justify-center">
-        <Text className="text-gray-500 text-sm">No strength data</Text>
+        <Text className="text-gray-500 text-sm">No cardio calories data</Text>
       </View>
     );
   }
@@ -26,10 +26,10 @@ export function TotalWeightLiftedChart() {
   const barData = data.map((d) => ({
     value: d.value,
     label: d.label,
-    frontColor: d.value === peak ? '#f59e0b' : '#3b82f6',
+    frontColor: d.value === peak ? '#10b981' : '#3b82f6',
     topLabelComponent: () => (
       <Text style={{ fontSize: 12, fontWeight: '600', color: '#e5e7eb', marginBottom: 3 }}>
-        {d.value >= 1000 ? `${(d.value / 1000).toFixed(0)}k` : String(d.value)}
+        {d.value >= 1000 ? `${(d.value / 1000).toFixed(1)}k` : String(d.value)}
       </Text>
     ),
   }));
@@ -40,14 +40,14 @@ export function TotalWeightLiftedChart() {
         <View>
           {mode === 'total' ? (
             <>
-              <Text className="text-xs text-gray-400">Total lifted</Text>
-              <Text className="text-sm font-bold text-gray-200">{(total / 1000).toFixed(0)}t</Text>
+              <Text className="text-xs text-gray-400">Total calories</Text>
+              <Text className="text-sm font-bold text-gray-200">{Math.round(total).toLocaleString()} kcal</Text>
             </>
           ) : (
             <>
               <Text className="text-xs text-gray-400">Overall avg / session</Text>
               <Text className="text-sm font-bold text-gray-200">
-                {Math.round(total / data.length).toLocaleString()} kg
+                {Math.round(total / data.length).toLocaleString()} kcal
               </Text>
             </>
           )}
@@ -60,7 +60,7 @@ export function TotalWeightLiftedChart() {
               onPress={() => setMode(m)}
               className={`px-3 py-1 rounded-full ${mode === m ? 'bg-gray-900' : ''}`}
             >
-              <Text className={`text-xs font-semibold capitalize ${mode === m ? 'text-blue-400' : 'text-gray-500'}`}>
+              <Text className={`text-xs font-semibold ${mode === m ? 'text-blue-400' : 'text-gray-500'}`}>
                 {m === 'avg' ? 'Avg/session' : 'Total'}
               </Text>
             </TouchableOpacity>
@@ -69,9 +69,7 @@ export function TotalWeightLiftedChart() {
 
         <View className="items-end">
           <Text className="text-xs text-gray-400">Peak period</Text>
-          <Text className="text-sm font-bold text-amber-400">
-            {peak >= 1000 ? `${(peak / 1000).toFixed(1)}t` : `${peak} kg`}
-          </Text>
+          <Text className="text-sm font-bold text-emerald-400">{peak.toLocaleString()} kcal</Text>
         </View>
       </View>
 

@@ -1,10 +1,12 @@
-import { View, Text, useWindowDimensions } from 'react-native';
+import { useState } from 'react';
+import { View, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
 import { useCardioDistance } from '../../hooks/useFilteredData';
 import { barDims } from '../../lib/utils';
 
 export function CardioDistanceChart() {
-  const data = useCardioDistance();
+  const [mode, setMode] = useState<'total' | 'avg'>('total');
+  const data = useCardioDistance(mode);
   const { width } = useWindowDimensions();
   const WIDTH = width - 64;
 
@@ -19,7 +21,7 @@ export function CardioDistanceChart() {
   const peak = Math.max(...data.map((d) => d.value));
   const total = data.reduce((s, d) => s + d.value, 0);
   const { barWidth, spacing } = barDims(WIDTH, data.length);
-  const chartKey = data.map((d) => d.label).join('|');
+  const chartKey = data.map((d) => d.label).join('|') + mode;
 
   const barData = data.map((d) => ({
     value: d.value,
@@ -34,11 +36,37 @@ export function CardioDistanceChart() {
 
   return (
     <View>
-      <View className="flex-row justify-between mb-3">
+      <View className="flex-row justify-between items-center mb-3">
         <View>
-          <Text className="text-xs text-gray-400">Total distance</Text>
-          <Text className="text-sm font-bold text-gray-200">{total.toFixed(1)} km</Text>
+          {mode === 'total' ? (
+            <>
+              <Text className="text-xs text-gray-400">Total distance</Text>
+              <Text className="text-sm font-bold text-gray-200">{total.toFixed(1)} km</Text>
+            </>
+          ) : (
+            <>
+              <Text className="text-xs text-gray-400">Overall avg / session</Text>
+              <Text className="text-sm font-bold text-gray-200">
+                {(total / data.length).toFixed(1)} km
+              </Text>
+            </>
+          )}
         </View>
+
+        <View className="flex-row bg-gray-700 rounded-full p-0.5">
+          {(['total', 'avg'] as const).map((m) => (
+            <TouchableOpacity
+              key={m}
+              onPress={() => setMode(m)}
+              className={`px-3 py-1 rounded-full ${mode === m ? 'bg-gray-900' : ''}`}
+            >
+              <Text className={`text-xs font-semibold ${mode === m ? 'text-blue-400' : 'text-gray-500'}`}>
+                {m === 'avg' ? 'Avg/session' : 'Total'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <View className="items-end">
           <Text className="text-xs text-gray-400">Peak period</Text>
           <Text className="text-sm font-bold text-emerald-400">{peak.toFixed(1)} km</Text>
