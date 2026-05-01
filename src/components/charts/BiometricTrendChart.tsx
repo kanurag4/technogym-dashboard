@@ -29,6 +29,7 @@ export function BiometricTrendChart() {
   // even when the data range is narrow (e.g. weight 83–87 kg → only 4 units range).
   const range = sMax - sMin || sMax * 0.1;
   const chartMax = sMax + Math.max(range * 0.4, sMax * 0.08);
+  const chartKey = `${s.metric}-${n}-${s.entries[0]?.date.toISOString()}`;
 
   // Show a label on every point when there is at least 32px per point; otherwise
   // thin to every Nth point so labels don't overlap on dense datasets.
@@ -57,6 +58,7 @@ export function BiometricTrendChart() {
       {/* paddingTop reserves space above the chart so shifted-up labels aren't clipped */}
       <View style={{ paddingTop: 28 }}>
       <LineChart
+        key={chartKey}
         data={lineData}
         width={WIDTH}
         height={210}

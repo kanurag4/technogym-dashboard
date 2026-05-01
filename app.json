@@ -36,6 +36,12 @@
     "experiments": {
       "typedRoutes": true,
       "baseUrl": "/technogym-dashboard"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "adcfef9f-0e28-4c9f-a964-49a21f339611"
+      }
     }
   }
 }

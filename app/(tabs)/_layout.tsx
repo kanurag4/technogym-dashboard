@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { useEffect, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppStore } from '../../src/store/appStore';
 import { FileUploadScreen } from '../../src/components/upload/FileUploadScreen';
 
@@ -12,6 +13,7 @@ function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
 
 function TabsLayout() {
   const clearData = useAppStore((s) => s.clearData);
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -21,8 +23,8 @@ function TabsLayout() {
         tabBarStyle: {
           backgroundColor: '#111827',
           borderTopColor: '#1f2937',
-          height: 60,
-          paddingBottom: 8,
+          height: 60 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
         },
         tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
         headerStyle: { backgroundColor: '#111827' },

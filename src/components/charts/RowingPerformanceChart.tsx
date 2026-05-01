@@ -20,6 +20,7 @@ export function RowingPerformanceChart() {
   const totalSessions = data.reduce((s, d) => s + d.sessions, 0);
   const maxDist = Math.max(...data.map((d) => d.avgDistanceM));
   const maxPow = Math.max(...data.map((d) => d.avgPower));
+  const chartKey = data.map((d) => d.label).join('|');
 
   const distanceData = data.map((d) => ({
     value: d.avgDistanceM,
@@ -52,6 +53,7 @@ export function RowingPerformanceChart() {
       <Text className="text-xs font-medium text-gray-400 mb-2">Avg Distance (m)</Text>
       <View style={{ paddingTop: 24 }}>
         <BarChart
+          key={chartKey + '-dist'}
           data={distanceData}
           barWidth={barWidth}
           barBorderRadius={4}
@@ -75,6 +77,7 @@ export function RowingPerformanceChart() {
           <Text className="text-xs font-medium text-gray-400 mb-2">Avg Power (W)</Text>
           <View style={{ paddingTop: 24 }}>
             <BarChart
+              key={chartKey + '-pow'}
               data={powerData}
               barWidth={barWidth}
               barBorderRadius={4}

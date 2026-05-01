@@ -19,6 +19,7 @@ export function TotalWeightLiftedChart() {
   const peak = Math.max(...data.map((d) => d.value));
   const total = data.reduce((s, d) => s + d.value, 0);
   const { barWidth, spacing } = barDims(WIDTH, data.length);
+  const chartKey = data.map((d) => d.label).join('|');
 
   const barData = data.map((d) => ({
     value: d.value,
@@ -46,6 +47,7 @@ export function TotalWeightLiftedChart() {
 
       <View style={{ paddingTop: 24 }}>
         <BarChart
+          key={chartKey}
           data={barData}
           barWidth={barWidth}
           barBorderRadius={4}

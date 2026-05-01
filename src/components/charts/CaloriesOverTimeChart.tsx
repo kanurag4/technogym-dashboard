@@ -18,6 +18,7 @@ export function CaloriesOverTimeChart() {
 
   const maxTotal = Math.max(...data.map((d) => d.indoor + d.outdoor));
   const { barWidth, spacing } = barDims(WIDTH, data.length);
+  const chartKey = data.map((d) => d.label).join('|');
 
   const stackData = data.map((d) => {
     const total = d.indoor + d.outdoor;
@@ -39,6 +40,7 @@ export function CaloriesOverTimeChart() {
     <View>
       <View style={{ paddingTop: 24 }}>
       <BarChart
+        key={chartKey}
         stackData={stackData}
         barWidth={barWidth}
         barBorderRadius={4}

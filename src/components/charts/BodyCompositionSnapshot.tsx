@@ -41,6 +41,7 @@ export function BodyCompositionSnapshot() {
   const total = segments.reduce((s, d) => s + d.value, 0);
   const maxSeg = Math.max(...segments.map((s) => s.value));
   const bodyWeight = latest['Weight'];
+  const chartKey = segments.map((s) => `${s.label}:${s.value}`).join('|');
 
   const barData = segments.map((s) => ({
     value: s.value,
@@ -56,6 +57,7 @@ export function BodyCompositionSnapshot() {
   return (
     <View style={{ paddingTop: 24 }}>
       <BarChart
+        key={chartKey}
         data={barData}
         barWidth={56}
         barBorderRadius={6}

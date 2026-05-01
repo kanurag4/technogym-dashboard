@@ -18,6 +18,7 @@ export function ActivityTypeBreakdown() {
   const total = breakdown.reduce((s, d) => s + d.calories, 0);
   const sorted = [...breakdown].sort((a, b) => b.calories - a.calories);
   const maxCal = sorted[0].calories;
+  const chartKey = sorted.map((d) => d.type).join('|');
 
   const barData = sorted.map((d) => ({
     value: d.calories,
@@ -33,6 +34,7 @@ export function ActivityTypeBreakdown() {
   return (
     <View style={{ paddingTop: 24 }}>
       <BarChart
+        key={chartKey}
         data={barData}
         barWidth={48}
         barBorderRadius={6}
