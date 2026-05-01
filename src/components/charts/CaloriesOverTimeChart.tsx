@@ -16,24 +16,35 @@ export function CaloriesOverTimeChart() {
     );
   }
 
-  const stackData = data.map((d) => ({
-    stacks: [
-      { value: d.indoor, color: '#3b82f6' },
-      { value: d.outdoor, color: '#8b5cf6' },
-    ],
-    label: d.label,
-  }));
+  const maxTotal = Math.max(...data.map((d) => d.indoor + d.outdoor));
+  const { barWidth, spacing } = barDims(WIDTH, data.length);
 
-  const { barWidth, spacing } = barDims(WIDTH, stackData.length);
+  const stackData = data.map((d) => {
+    const total = d.indoor + d.outdoor;
+    return {
+      stacks: [
+        { value: d.indoor, color: '#3b82f6' },
+        { value: d.outdoor, color: '#8b5cf6' },
+      ],
+      label: d.label,
+      topLabelComponent: () => (
+        <Text style={{ fontSize: 12, fontWeight: '600', color: '#e5e7eb', marginBottom: 3 }}>
+          {total >= 1000 ? `${(total / 1000).toFixed(1)}k` : String(total)}
+        </Text>
+      ),
+    };
+  });
 
   return (
     <View>
+      <View style={{ paddingTop: 24 }}>
       <BarChart
         stackData={stackData}
         barWidth={barWidth}
         barBorderRadius={4}
         height={160}
         width={WIDTH}
+        maxValue={Math.ceil(maxTotal * 1.25)}
         yAxisThickness={0}
         xAxisThickness={1}
         xAxisColor="#374151"
@@ -44,6 +55,7 @@ export function CaloriesOverTimeChart() {
         hideRules
         isAnimated
       />
+      </View>
       <View className="flex-row gap-4 mt-2 px-2">
         <View className="flex-row items-center gap-1">
           <View className="w-3 h-3 rounded-sm bg-blue-500" />
