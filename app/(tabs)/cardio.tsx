@@ -6,6 +6,7 @@ import { CardioDistanceChart } from '../../src/components/charts/CardioDistanceC
 import { CardioCaloriesChart } from '../../src/components/charts/CardioCaloriesChart';
 import { CardioPaceChart } from '../../src/components/charts/CardioPaceChart';
 import { CardioElevationChart } from '../../src/components/charts/CardioElevationChart';
+import { RowingCardioChart } from '../../src/components/charts/RowingCardioChart';
 import { useCardioDistance, useCardioCalories, useCardioPace } from '../../src/hooks/useFilteredData';
 
 function CardioStats() {
@@ -56,6 +57,11 @@ export default function CardioScreen() {
       <View className="bg-gray-800 rounded-2xl p-4 mb-4">
         <SectionHeader title="Elevation Gain" subtitle="total meters climbed per period" />
         <CardioElevationChart />
+      </View>
+
+      <View className="bg-gray-800 rounded-2xl p-4 mb-4">
+        <SectionHeader title="Rowing" subtitle="total distance or calories per period" />
+        <RowingCardioChart />
       </View>
     </ScrollView>
   );

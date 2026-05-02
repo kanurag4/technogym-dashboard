@@ -270,7 +270,7 @@ export function useCardioCalories(mode: 'total' | 'avg' = 'total'): GroupedBar[]
     if (!data) return [];
     const activities = data.activities.filter(
       (a) =>
-        (a.type === 'cardio' || a.type === 'outdoor') &&
+        (a.type === 'cardio' || a.type === 'rowing' || a.type === 'outdoor') &&
         inDateRange(a.date, filters.dateFrom, filters.dateTo)
     );
     const grouped = groupBy(activities, (a) => {
@@ -356,6 +356,7 @@ export function useRowingPerformance(): Array<{
   date: Date;
   avgDistanceM: number;
   totalDistanceM: number;
+  totalCalories: number;
   avgPower: number;
   avgSpm: number;
   sessions: number;
@@ -379,6 +380,7 @@ export function useRowingPerformance(): Array<{
       .map(([key, items]) => {
         const d = new Date(key);
         const totalDist = items.reduce((s, a) => s + (a.distanceM ?? a.metrics['RowingDistance'] ?? 0), 0);
+        const totalCal = items.reduce((s, a) => s + (a.calories ?? 0), 0);
         const avgPow = items.reduce((s, a) => s + (a.metrics['AvgPower'] ?? 0), 0) / items.length;
         const avgSpm = items.reduce((s, a) => s + (a.metrics['AvgSpm'] ?? 0), 0) / items.length;
         return {
@@ -386,6 +388,7 @@ export function useRowingPerformance(): Array<{
           date: d,
           avgDistanceM: Math.round(totalDist / items.length),
           totalDistanceM: Math.round(totalDist),
+          totalCalories: Math.round(totalCal),
           avgPower: Math.round(avgPow),
           avgSpm: Math.round(avgSpm * 10) / 10,
           sessions: items.length,
