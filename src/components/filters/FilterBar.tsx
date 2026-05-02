@@ -4,6 +4,7 @@ import type { ActivityType } from '../../types/domain';
 
 const PRESETS: Array<{ label: string; days: number | null }> = [
   { label: '30d', days: 30 },
+  { label: '6w', days: 42 },
   { label: '3m', days: 90 },
   { label: '6m', days: 180 },
   { label: '1y', days: 365 },

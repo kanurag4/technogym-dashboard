@@ -20,6 +20,7 @@ export function CaloriesOverTimeChart() {
 
   const maxTotal = Math.max(...data.map((d) => d.indoor + d.outdoor));
   const overallTotal = data.reduce((s, d) => s + d.indoor + d.outdoor, 0);
+  const totalSessions = data.reduce((s, d) => s + d.indoorDays + d.outdoorCount, 0);
   const { barWidth, spacing } = barDims(WIDTH, data.length);
   const chartKey = data.map((d) => d.label).join('|') + mode;
 
@@ -54,7 +55,7 @@ export function CaloriesOverTimeChart() {
             <>
               <Text className="text-xs text-gray-400">Avg per session</Text>
               <Text className="text-sm font-bold text-gray-200">
-                {Math.round(overallTotal / data.length).toLocaleString()} kcal
+                {totalSessions > 0 ? Math.round(overallTotal / totalSessions).toLocaleString() : '—'} kcal
               </Text>
             </>
           )}

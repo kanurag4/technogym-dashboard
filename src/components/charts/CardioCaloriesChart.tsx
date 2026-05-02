@@ -20,6 +20,7 @@ export function CardioCaloriesChart() {
 
   const peak = Math.max(...data.map((d) => d.value));
   const total = data.reduce((s, d) => s + d.value, 0);
+  const totalSessions = data.reduce((s, d) => s + (d.sessionCount ?? 1), 0);
   const { barWidth, spacing } = barDims(WIDTH, data.length);
   const chartKey = data.map((d) => d.label).join('|') + mode;
 
@@ -47,7 +48,7 @@ export function CardioCaloriesChart() {
             <>
               <Text className="text-xs text-gray-400">Overall avg / session</Text>
               <Text className="text-sm font-bold text-gray-200">
-                {Math.round(total / data.length).toLocaleString()} kcal
+                {totalSessions > 0 ? Math.round(total / totalSessions).toLocaleString() : '—'} kcal
               </Text>
             </>
           )}

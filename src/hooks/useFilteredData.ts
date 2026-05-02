@@ -7,12 +7,15 @@ export interface GroupedBar {
   label: string;
   value: number;
   date: Date;
+  sessionCount?: number;
 }
 
 export interface StackedBar {
   label: string;
   indoor: number;
   outdoor: number;
+  indoorDays: number;
+  outdoorCount: number;
   date: Date;
 }
 
@@ -97,8 +100,9 @@ export function useCaloriesOverTime(mode: 'total' | 'avg' = 'total'): StackedBar
         const outdoorItems = items.filter((a) => a.sourceType === 'outdoor');
         const indoorTotal = indoorItems.reduce((s, a) => s + (a.calories ?? 0), 0);
         const outdoorTotal = outdoorItems.reduce((s, a) => s + (a.calories ?? 0), 0);
-        const indoor = mode === 'avg' && indoorItems.length > 0
-          ? Math.round(indoorTotal / indoorItems.length)
+        const indoorDays = new Set(indoorItems.map((a) => formatDate(a.date))).size;
+        const indoor = mode === 'avg' && indoorDays > 0
+          ? Math.round(indoorTotal / indoorDays)
           : Math.round(indoorTotal);
         const outdoor = mode === 'avg' && outdoorItems.length > 0
           ? Math.round(outdoorTotal / outdoorItems.length)
@@ -108,6 +112,8 @@ export function useCaloriesOverTime(mode: 'total' | 'avg' = 'total'): StackedBar
           label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d),
           indoor,
           outdoor,
+          indoorDays,
+          outdoorCount: outdoorItems.length,
           date: d,
         };
       })
@@ -156,12 +162,14 @@ export function useTotalWeightLifted(mode: 'total' | 'avg' = 'total'): GroupedBa
     return Object.entries(grouped)
       .map(([key, items]) => {
         const total = items.reduce((s, a) => s + (a.metrics['TotalIsoWeight'] ?? 0), 0);
-        const value = mode === 'avg' ? Math.round(total / items.length) : Math.round(total);
+        const distinctDays = new Set(items.map((a) => formatDate(a.date))).size;
+        const value = mode === 'avg' && distinctDays > 0 ? Math.round(total / distinctDays) : Math.round(total);
         const d = new Date(key);
         return {
           label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d),
           value,
           date: d,
+          sessionCount: distinctDays,
         };
       })
       .sort((a, b) => a.date.getTime() - b.date.getTime())
@@ -186,12 +194,16 @@ export function useCardioDistance(mode: 'total' | 'avg' = 'total'): GroupedBar[]
     return Object.entries(grouped)
       .map(([key, items]) => {
         const totalM = items.reduce((s, a) => s + (a.distanceM ?? a.metrics['HDistance'] ?? 0), 0);
-        const km = mode === 'avg' ? totalM / items.length / 1000 : totalM / 1000;
+        const indoorDays = new Set(items.filter((a) => a.sourceType === 'indoor').map((a) => formatDate(a.date))).size;
+        const outdoorCount = items.filter((a) => a.sourceType === 'outdoor').length;
+        const sessionCount = indoorDays + outdoorCount;
+        const km = mode === 'avg' && sessionCount > 0 ? totalM / sessionCount / 1000 : totalM / 1000;
         const d = new Date(key);
         return {
           label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d),
           value: parseFloat(km.toFixed(1)),
           date: d,
+          sessionCount,
         };
       })
       .filter((d) => d.value > 0)
@@ -268,9 +280,12 @@ export function useCardioCalories(mode: 'total' | 'avg' = 'total'): GroupedBar[]
     return Object.entries(grouped)
       .map(([key, items]) => {
         const total = items.reduce((s, a) => s + (a.calories ?? 0), 0);
-        const value = mode === 'avg' ? Math.round(total / items.length) : Math.round(total);
+        const indoorDays = new Set(items.filter((a) => a.sourceType === 'indoor').map((a) => formatDate(a.date))).size;
+        const outdoorCount = items.filter((a) => a.sourceType === 'outdoor').length;
+        const sessionCount = indoorDays + outdoorCount;
+        const value = mode === 'avg' && sessionCount > 0 ? Math.round(total / sessionCount) : Math.round(total);
         const d = new Date(key);
-        return { label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d), value, date: d };
+        return { label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d), value, date: d, sessionCount };
       })
       .filter((d) => d.value > 0)
       .sort((a, b) => a.date.getTime() - b.date.getTime())
