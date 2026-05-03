@@ -293,7 +293,7 @@ export function useCardioCalories(mode: 'total' | 'avg' = 'total'): GroupedBar[]
   }, [data, filters.granularity, filters.dateFrom, filters.dateTo, mode]);
 }
 
-export function useTrainingLoad(): GroupedBar[] {
+export function useTrainingLoad(mode: 'total' | 'avg' = 'total'): GroupedBar[] {
   const activities = useFilteredActivities();
   const { filters } = useAppStore();
   return useMemo(() => {
@@ -304,12 +304,16 @@ export function useTrainingLoad(): GroupedBar[] {
     return Object.entries(grouped)
       .map(([key, items]) => {
         const totalMin = items.reduce((s, a) => s + (a.durationSec ?? 0), 0) / 60;
+        const indoorDays = new Set(items.filter((a) => a.sourceType === 'indoor').map((a) => formatDate(a.date))).size;
+        const outdoorCount = items.filter((a) => a.sourceType === 'outdoor').length;
+        const sessionCount = indoorDays + outdoorCount;
+        const value = mode === 'avg' && sessionCount > 0 ? Math.round(totalMin / sessionCount) : Math.round(totalMin);
         const d = new Date(key);
-        return { label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d), value: Math.round(totalMin), date: d };
+        return { label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d), value, date: d, sessionCount };
       })
       .sort((a, b) => a.date.getTime() - b.date.getTime())
       .slice(-26);
-  }, [activities, filters.granularity]);
+  }, [activities, filters.granularity, mode]);
 }
 
 export function useWorkoutDays(): GroupedBar[] {
@@ -331,7 +335,7 @@ export function useWorkoutDays(): GroupedBar[] {
   }, [activities, filters.granularity]);
 }
 
-export function useMetsMinTrend(): GroupedBar[] {
+export function useMetsMinTrend(mode: 'total' | 'avg' = 'total'): GroupedBar[] {
   const activities = useFilteredActivities();
   const { filters } = useAppStore();
   return useMemo(() => {
@@ -343,12 +347,18 @@ export function useMetsMinTrend(): GroupedBar[] {
     return Object.entries(grouped)
       .map(([key, items]) => {
         const total = items.reduce((s, a) => s + (a.metrics['MetsMin'] ?? 0), 0);
+        const indoorDays = new Set(items.filter((a) => a.sourceType === 'indoor').map((a) => formatDate(a.date))).size;
+        const outdoorCount = items.filter((a) => a.sourceType === 'outdoor').length;
+        const sessionCount = indoorDays + outdoorCount;
+        const value = mode === 'avg' && sessionCount > 0
+          ? parseFloat((total / sessionCount).toFixed(1))
+          : parseFloat(total.toFixed(1));
         const d = new Date(key);
-        return { label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d), value: parseFloat(total.toFixed(1)), date: d };
+        return { label: filters.granularity === 'weekly' ? formatWeek(d) : formatMonthYear(d), value, date: d };
       })
       .sort((a, b) => a.date.getTime() - b.date.getTime())
       .slice(-26);
-  }, [activities, filters.granularity]);
+  }, [activities, filters.granularity, mode]);
 }
 
 export function useRowingPerformance(): Array<{

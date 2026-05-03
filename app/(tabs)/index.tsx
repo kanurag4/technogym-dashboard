@@ -32,6 +32,14 @@ function OverviewStats() {
 
   const indoorCalories = indoorActivities.reduce((s, a) => s + (a.calories ?? 0), 0);
   const avgCalPerVisit = gymVisits > 0 ? Math.round(indoorCalories / gymVisits) : 0;
+
+  const totalDurationSec = indoorActivities.reduce((s, a) => s + (a.durationSec ?? 0), 0);
+  const avgDurationMin = gymVisits > 0 ? Math.round(totalDurationSec / gymVisits / 60) : 0;
+  const avgDurationStr = avgDurationMin >= 60
+    ? `${Math.floor(avgDurationMin / 60)}h${avgDurationMin % 60 > 0 ? (avgDurationMin % 60) + 'm' : ''}`
+    : String(avgDurationMin);
+  const avgDurationUnit = avgDurationMin >= 60 ? undefined : 'min';
+
   const latestWeight = [...data.biometrics].filter((b) => b.metric === 'Weight').pop();
 
   return (
@@ -39,8 +47,9 @@ function OverviewStats() {
       <StatCard label="Gym Visits" value={gymVisits} color="#3b82f6" />
       <StatCard label="Avg / Week" value={avgPerWeek} unit="visits" color="#8b5cf6" />
       <StatCard label="Avg Cal/Visit" value={avgCalPerVisit.toLocaleString()} unit="kcal" color="#10b981" />
+      <StatCard label="Avg Duration" value={avgDurationStr} unit={avgDurationUnit} color="#f59e0b" />
       {latestWeight && (
-        <StatCard label="Weight" value={latestWeight.value.toFixed(1)} unit="kg" color="#f59e0b" />
+        <StatCard label="Weight" value={latestWeight.value.toFixed(1)} unit="kg" color="#ec4899" />
       )}
     </View>
   );
@@ -63,7 +72,7 @@ export default function OverviewScreen() {
       </View>
 
       <View className="bg-gray-800 rounded-2xl p-4 mb-4">
-        <SectionHeader title="Training Load" subtitle="Total active minutes per period" />
+        <SectionHeader title="Training Load" subtitle="Active minutes per period" />
         <TrainingLoadChart />
       </View>
 

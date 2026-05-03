@@ -1,10 +1,12 @@
-import { View, Text, useWindowDimensions } from 'react-native';
+import { useState } from 'react';
+import { View, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
 import { useMetsMinTrend } from '../../hooks/useFilteredData';
 import { barDims } from '../../lib/utils';
 
 export function MetsMinChart() {
-  const data = useMetsMinTrend();
+  const [mode, setMode] = useState<'total' | 'avg'>('total');
+  const data = useMetsMinTrend(mode);
   const { width } = useWindowDimensions();
   const WIDTH = width - 64;
 
@@ -17,9 +19,8 @@ export function MetsMinChart() {
   }
 
   const peak = Math.max(...data.map((d) => d.value));
-  const avg = (data.reduce((s, d) => s + d.value, 0) / data.length).toFixed(1);
   const { barWidth, spacing } = barDims(WIDTH, data.length);
-  const chartKey = data.map((d) => d.label).join('|');
+  const chartKey = `${data.map((d) => d.label).join('|')}|${mode}`;
 
   const barData = data.map((d) => ({
     value: d.value,
@@ -34,10 +35,19 @@ export function MetsMinChart() {
 
   return (
     <View>
-      <View className="flex-row justify-between mb-3">
-        <View>
-          <Text className="text-xs text-gray-400">Avg per period</Text>
-          <Text className="text-sm font-bold text-gray-200">{avg}</Text>
+      <View className="flex-row justify-between items-center mb-3">
+        <View className="flex-row bg-gray-700 rounded-lg p-1">
+          {(['total', 'avg'] as const).map((m) => (
+            <TouchableOpacity
+              key={m}
+              onPress={() => setMode(m)}
+              className={`px-3 py-1 rounded-md ${mode === m ? 'bg-gray-500' : ''}`}
+            >
+              <Text className={`text-xs font-semibold ${mode === m ? 'text-white' : 'text-gray-400'}`}>
+                {m === 'total' ? 'Total' : 'Avg/Session'}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
         <View className="items-end">
           <Text className="text-xs text-gray-400">Peak period</Text>
