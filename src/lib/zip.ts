@@ -5,7 +5,8 @@ export interface TechnoGymFiles {
   masterdata: string;
   biometrics: string;
   indooractivities: string;
-  outdooractivities: string;
+  /** Omitted when the export has no outdoor sessions. */
+  outdooractivities?: string;
 }
 
 async function readZipData(fileUri: string): Promise<ArrayBuffer | string> {
@@ -45,9 +46,9 @@ export async function extractTechnoGymZip(fileUri: string): Promise<TechnoGymFil
     }
   }
 
-  const missing = (
-    ['masterdata', 'biometrics', 'indooractivities', 'outdooractivities'] as const
-  ).filter((k) => !result[k]);
+  const missing = (['masterdata', 'biometrics', 'indooractivities'] as const).filter(
+    (k) => !result[k]
+  );
 
   if (missing.length > 0) {
     throw new Error(`Missing files in ZIP: ${missing.join(', ')}`);
